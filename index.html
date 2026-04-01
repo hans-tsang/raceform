@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaceForm — Race Performance Tracker</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root,[data-theme="light"]{
+--text-xs:clamp(0.75rem,0.7rem+0.25vw,0.875rem);
+--text-sm:clamp(0.875rem,0.8rem+0.35vw,1rem);
+--text-base:clamp(1rem,0.95rem+0.25vw,1.125rem);
+--text-lg:clamp(1.125rem,1rem+0.75vw,1.5rem);
+--text-xl:clamp(1.5rem,1.2rem+1.25vw,2.25rem);
+--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--space-16:4rem;
+--font-body:'General Sans','Helvetica Neue',sans-serif;
+--font-display:'Satoshi','Inter',sans-serif;
+--color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;--color-surface-offset:#f3f0ec;--color-surface-offset-2:#edeae5;--color-surface-dynamic:#e6e4df;--color-divider:#dcd9d5;--color-border:#d4d1ca;
+--color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;--color-text-inverse:#f9f8f4;
+--color-primary:#01696f;--color-primary-hover:#0c4e54;--color-primary-active:#0f3638;--color-primary-highlight:#cedcd8;
+--color-error:#a12c7b;--color-success:#437a22;--color-warning:#964219;
+--color-orange:#da7101;--color-gold:#d19900;--color-blue:#006494;--color-purple:#7a39bb;
+--radius-sm:0.375rem;--radius-md:0.5rem;--radius-lg:0.75rem;--radius-xl:1rem;
+--transition-interactive:180ms cubic-bezier(0.16,1,0.3,1);
+--shadow-sm:0 1px 2px oklch(0.2 0.01 80/0.06);--shadow-md:0 4px 12px oklch(0.2 0.01 80/0.08);--shadow-lg:0 12px 32px oklch(0.2 0.01 80/0.12);
+}
+[data-theme="dark"]{
+--color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;--color-surface-offset:#1d1c1a;--color-surface-offset-2:#22211f;--color-surface-dynamic:#2d2c2a;--color-divider:#262523;--color-border:#393836;
+--color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;--color-text-inverse:#2b2a28;
+--color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-primary-active:#1a626b;--color-primary-highlight:#313b3b;
+--color-error:#d163a7;--color-success:#6daa45;--color-warning:#bb653b;
+--color-orange:#fdab43;--color-gold:#e8af34;--color-blue:#5591c7;--color-purple:#a86fdf;
+--shadow-sm:0 1px 2px oklch(0 0 0/0.2);--shadow-md:0 4px 12px oklch(0 0 0/0.3);--shadow-lg:0 12px 32px oklch(0 0 0/0.4);
+}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth;scroll-padding-top:var(--space-16)}
+body{min-height:100dvh;line-height:1.6;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg)}
+img,svg{display:block;max-width:100%}
+input,button,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.15;font-family:var(--font-display)}
+p{text-wrap:pretty;max-width:72ch}
+a{color:var(--color-primary);text-decoration:none}
+a:hover{color:var(--color-primary-hover)}
+::selection{background:oklch(from var(--color-primary) l c h/0.25)}
+:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
+.app{display:grid;grid-template-columns:260px 1fr;grid-template-rows:auto 1fr;min-height:100dvh}
+@media(max-width:768px){.app{grid-template-columns:1fr}}
+.sidebar{grid-row:1/-1;background:var(--color-surface);border-right:1px solid var(--color-border);padding:var(--space-6) 0;display:flex;flex-direction:column;gap:var(--space-2);overflow-y:auto;position:sticky;top:0;height:100dvh}
+@media(max-width:768px){.sidebar{display:none;position:fixed;inset:0;z-index:100;width:280px}.sidebar.open{display:flex}}
+.sidebar-header{padding:0 var(--space-6);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-3)}
+.sidebar-header svg{color:var(--color-primary)}
+.sidebar-header h2{font-size:var(--text-lg);font-weight:700}
+.nav-item{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-6);font-size:var(--text-sm);color:var(--color-text-muted);cursor:pointer;transition:all var(--transition-interactive);border:none;width:100%;text-align:left;font-weight:500}
+.nav-item:hover,.nav-item.active{background:var(--color-surface-offset);color:var(--color-text)}
+.nav-item.active{color:var(--color-primary);font-weight:600}
+.nav-item i{width:18px;height:18px;flex-shrink:0}
+.nav-section{padding:var(--space-2) var(--space-6) var(--space-1);font-size:var(--text-xs);font-weight:600;color:var(--color-text-faint);text-transform:uppercase;letter-spacing:0.06em;margin-top:var(--space-4)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-6);border-bottom:1px solid var(--color-border);background:var(--color-surface)}
+.topbar-left{display:flex;align-items:center;gap:var(--space-3)}
+.topbar h1{font-size:var(--text-lg);font-weight:700}
+.mobile-menu{display:none;padding:var(--space-2)}
+@media(max-width:768px){.mobile-menu{display:block}}
+.topbar-actions{display:flex;align-items:center;gap:var(--space-3)}
+.theme-toggle{padding:var(--space-2);border-radius:var(--radius-sm);color:var(--color-text-muted)}
+.theme-toggle:hover{background:var(--color-surface-offset);color:var(--color-text)}
+.main{padding:var(--space-6);overflow-y:auto}
+@media(max-width:768px){.main{padding:var(--space-4)}}
+.page{display:none}.page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:var(--space-4);margin-bottom:var(--space-6)}
+.kpi-card{background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/0.08);border-radius:var(--radius-lg);padding:var(--space-5)}
+.kpi-label{font-size:var(--text-xs);color:var(--color-text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:var(--space-1)}
+.kpi-value{font-size:var(--text-xl);font-weight:700;font-variant-numeric:tabular-nums lining-nums;font-family:var(--font-display)}
+.kpi-sub{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1)}
+.card{background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/0.08);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)}
+.card-title{font-size:var(--text-lg);font-weight:700}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums lining-nums}
+th{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);text-align:left;padding:var(--space-3) var(--space-4);border-bottom:2px solid var(--color-divider);white-space:nowrap}
+td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);font-size:var(--text-sm);white-space:nowrap}
+tr:hover td{background:var(--color-surface-offset)}
+.badge{display:inline-flex;align-items:center;padding:var(--space-1) var(--space-2);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600}
+.badge-road{background:oklch(from var(--color-primary) l c h/0.12);color:var(--color-primary)}
+.badge-trail{background:oklch(from var(--color-success) l c h/0.12);color:var(--color-success)}
+.badge-ultra{background:oklch(from var(--color-purple) l c h/0.12);color:var(--color-purple)}
+.badge-half{background:oklch(from var(--color-blue) l c h/0.12);color:var(--color-blue)}
+.tabs{display:flex;gap:var(--space-1);background:var(--color-surface-offset);padding:var(--space-1);border-radius:var(--radius-md);margin-bottom:var(--space-6);flex-wrap:wrap}
+.tab{padding:var(--space-2) var(--space-4);border-radius:var(--radius-sm);font-size:var(--text-sm);font-weight:500;color:var(--color-text-muted);transition:all var(--transition-interactive)}
+.tab:hover{color:var(--color-text)}
+.tab.active{background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-sm);font-weight:600}
+.form-group{margin-bottom:var(--space-4)}
+.form-label{display:block;font-size:var(--text-sm);font-weight:500;margin-bottom:var(--space-1);color:var(--color-text)}
+.form-input,.form-select{width:100%;padding:var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2);font-size:var(--text-sm);transition:border-color var(--transition-interactive)}
+.form-input:focus,.form-select:focus{border-color:var(--color-primary);outline:none;box-shadow:0 0 0 3px oklch(from var(--color-primary) l c h/0.12)}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:var(--space-4)}
+.btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-5);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:600;transition:all var(--transition-interactive)}
+.btn-primary{background:var(--color-primary);color:var(--color-text-inverse)}
+.btn-primary:hover{background:var(--color-primary-hover)}
+.btn-secondary{background:var(--color-surface-offset);color:var(--color-text);border:1px solid var(--color-border)}
+.btn-secondary:hover{background:var(--color-surface-dynamic)}
+.chart-container{position:relative;height:300px;margin:var(--space-4) 0}
+@media(max-width:768px){.chart-container{height:220px}}
+.split-bar{display:flex;height:28px;border-radius:var(--radius-sm);overflow:hidden;gap:1px;margin:var(--space-2) 0}
+.split-bar div{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;min-width:20px}
+.gauge{display:flex;align-items:center;gap:var(--space-3);margin:var(--space-2) 0}
+.gauge-bar{flex:1;height:8px;background:var(--color-surface-dynamic);border-radius:var(--radius-full);overflow:hidden}
+.gauge-fill{height:100%;border-radius:var(--radius-full);transition:width 0.6s ease}
+.predict-result{background:var(--color-primary-highlight);border-radius:var(--radius-lg);padding:var(--space-6);margin-top:var(--space-4);text-align:center}
+.predict-result .big{font-size:var(--text-xl);font-weight:700;font-family:var(--font-display);color:var(--color-primary);margin-bottom:var(--space-2)}
+.empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--space-16) var(--space-8);color:var(--color-text-muted)}
+.empty-state h3{color:var(--color-text);margin-bottom:var(--space-2)}
+.empty-state p{max-width:36ch;margin-bottom:var(--space-6)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:99}
+.overlay.open{display:block}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--color-border);border-radius:var(--radius-full)}
+.cal-item{display:grid;grid-template-columns:60px 1fr auto;gap:var(--space-4);align-items:center;padding:var(--space-4);border-bottom:1px solid var(--color-divider)}
+.cal-item:last-child{border-bottom:none}
+.cal-date{text-align:center}
+.cal-date .month{font-size:var(--text-xs);font-weight:600;color:var(--color-primary);text-transform:uppercase}
+.cal-date .day{font-size:var(--text-lg);font-weight:700}
+.cal-name{font-weight:600;font-size:var(--text-sm)}
+.cal-meta{font-size:var(--text-xs);color:var(--color-text-muted)}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="2"/><path d="M8 18 L14 6 L20 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="18" r="2" fill="currentColor"/></svg>
+<h2>RaceForm</h2>
+</div>
+<div class="nav-section">Dashboard</div>
+<button class="nav-item active" data-page="dashboard"><i data-lucide="layout-dashboard"></i>Overview</button>
+<button class="nav-item" data-page="tokyo"><i data-lucide="trophy"></i>Tokyo 2026 Results</button>
+<button class="nav-item" data-page="boston"><i data-lucide="flag"></i>Boston 2026 Field</button>
+<div class="nav-section">Analysis</div>
+<button class="nav-item" data-page="splits"><i data-lucide="bar-chart-3"></i>Split Analysis</button>
+<button class="nav-item" data-page="elevation"><i data-lucide="mountain"></i>Elevation Pacing</button>
+<button class="nav-item" data-page="weather"><i data-lucide="cloud-sun"></i>Weather Impact</button>
+<div class="nav-section">Tools</div>
+<button class="nav-item" data-page="predictor"><i data-lucide="target"></i>Boston Predictor</button>
+<button class="nav-item" data-page="calculator"><i data-lucide="calculator"></i>Training Calculator</button>
+<button class="nav-item" data-page="calendar"><i data-lucide="calendar-days"></i>Race Calendar</button>
+<div style="flex:1"></div>
+<div style="padding:0 var(--space-6);font-size:var(--text-xs);color:var(--color-text-faint)">Built for Hans · Apr 2026</div>
+</nav>
+<div class="overlay" id="overlay"></div>
+<header class="topbar">
+<div class="topbar-left">
+<button class="mobile-menu" id="menuBtn" aria-label="Menu"><i data-lucide="menu"></i></button>
+<h1 id="pageTitle">Overview</h1>
+</div>
+<div class="topbar-actions">
+<button class="theme-toggle" data-theme-toggle aria-label="Toggle theme"><i data-lucide="moon"></i></button>
+</div>
+</header>
+<main class="main">
+<div class="page active" id="page-dashboard">
+<div class="kpi-grid">
+<div class="kpi-card"><div class="kpi-label">Tokyo Men's Winner</div><div class="kpi-value">2:03:36</div><div class="kpi-sub">Tadese Takele (ETH) — repeat champion</div></div>
+<div class="kpi-card"><div class="kpi-label">Tokyo Women's CR</div><div class="kpi-value">2:14:28</div><div class="kpi-sub">Brigid Kosgei (KEN) — course record</div></div>
+<div class="kpi-card"><div class="kpi-label">Boston 2026</div><div class="kpi-value">Apr 20</div><div class="kpi-sub">Korir, Mantz, Sisson, Lokedi confirmed</div></div>
+<div class="kpi-card"><div class="kpi-label">World Trail Majors</div><div class="kpi-value">10 Races</div><div class="kpi-sub">Global calendar — UTMB, Western States, etc.</div></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Race Type Comparison</h3></div>
+<div class="chart-container"><canvas id="chartRaceTypes"></canvas></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Marathon Majors — 2026 Winners & Fields</h3></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Race</th><th>Date</th><th>Men's Leader</th><th>Time/Status</th><th>Women's Leader</th><th>Time/Status</th></tr></thead>
+<tbody>
+<tr><td>Tokyo</td><td>Mar 1</td><td>Tadese Takele</td><td>2:03:36</td><td>Brigid Kosgei</td><td>2:14:28 CR</td></tr>
+<tr><td>Boston</td><td>Apr 20</td><td>John Korir (def.)</td><td><span class="badge badge-road">Field Set</span></td><td>Sharon Lokedi (def.)</td><td><span class="badge badge-road">Field Set</span></td></tr>
+<tr><td>London</td><td>Apr 26</td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td></tr>
+<tr><td>Berlin</td><td>Sep 27</td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td></tr>
+<tr><td>Chicago</td><td>Oct 11</td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td></tr>
+<tr><td>NYC</td><td>Nov 1</td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td><td>TBA</td><td><span class="badge badge-half">Upcoming</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="page" id="page-tokyo">
+<div class="tabs">
+<button class="tab active" data-tab="tokyo-men">Men's Elite</button>
+<button class="tab" data-tab="tokyo-women">Women's Elite</button>
+<button class="tab" data-tab="tokyo-wheelchair">Wheelchair</button>
+</div>
+<div class="card" id="tab-tokyo-men">
+<div class="card-header"><h3 class="card-title">Men's Elite — Tokyo Marathon 2026</h3></div>
+<p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-4)">Sunny, ~10°C. Three men finished within the same second in a dramatic sprint finish.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Athlete</th><th>Country</th><th>Finish</th><th>Gap</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Tadese Takele</strong></td><td>🇪🇹 ETH</td><td>2:03:36</td><td>—</td></tr>
+<tr><td>2</td><td>Geoffrey Toroitich</td><td>🇰🇪 KEN</td><td>2:03:36</td><td>+0s</td></tr>
+<tr><td>3</td><td>Alexander Mutiso</td><td>🇰🇪 KEN</td><td>2:03:36</td><td>+0s</td></tr>
+<tr><td>4</td><td>Daniel Mateiko</td><td>🇰🇪 KEN</td><td>2:03:43</td><td>+7s</td></tr>
+<tr><td>5</td><td>Muktar Edris</td><td>🇪🇹 ETH</td><td>2:04:06</td><td>+30s</td></tr>
+<tr><td>6</td><td>Iliass Aouani</td><td>🇮🇹 ITA</td><td>2:04:25</td><td>+49s</td></tr>
+<tr><td>7</td><td>Selemon Barega</td><td>🇪🇹 ETH</td><td>2:04:59</td><td>+1:23</td></tr>
+<tr><td>8</td><td>Seifu Tura</td><td>🇪🇹 ETH</td><td>2:05:01</td><td>+1:25</td></tr>
+<tr><td>9</td><td>Vincent Ngetich</td><td>🇰🇪 KEN</td><td>2:05:20</td><td>+1:44</td></tr>
+<tr><td>10</td><td>Shifera Tamru</td><td>🇪🇹 ETH</td><td>2:05:55</td><td>+2:19</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" id="tab-tokyo-women" style="display:none">
+<div class="card-header"><h3 class="card-title">Women's Elite — Tokyo Marathon 2026</h3></div>
+<p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-4)">Kosgei broke away before 35km for a dominant course record victory.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Athlete</th><th>Country</th><th>Finish</th><th>Gap</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Brigid Kosgei</strong></td><td>🇰🇪 KEN</td><td>2:14:28 CR</td><td>—</td></tr>
+<tr><td>2</td><td>Bertukan Welde</td><td>🇪🇹 ETH</td><td>2:16:35</td><td>+2:07</td></tr>
+<tr><td>3</td><td>Hawi Feysa</td><td>🇪🇹 ETH</td><td>2:17:38</td><td>+3:10</td></tr>
+<tr><td>4</td><td>Sutume Asefa Kebede</td><td>🇪🇹 ETH</td><td>2:17:38</td><td>+3:10</td></tr>
+<tr><td>5</td><td>Megertu Alemu</td><td>🇪🇹 ETH</td><td>2:18:49</td><td>+4:21</td></tr>
+<tr><td>6</td><td>Viola Cheptoo</td><td>🇰🇪 KEN</td><td>2:19:03</td><td>+4:35</td></tr>
+<tr><td>7</td><td>Mestawut Fikir</td><td>🇪🇹 ETH</td><td>2:19:59</td><td>+5:31</td></tr>
+<tr><td>8</td><td>Aberu Ayana</td><td>🇪🇹 ETH</td><td>2:20:29</td><td>+6:01</td></tr>
+<tr><td>9</td><td>Pascalia Jepkogei</td><td>🇰🇪 KEN</td><td>2:21:37</td><td>+7:09</td></tr>
+<tr><td>10</td><td>Ai Hosoda</td><td>🇯🇵 JPN</td><td>2:23:38</td><td>+9:10</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" id="tab-tokyo-wheelchair" style="display:none">
+<div class="card-header"><h3 class="card-title">Wheelchair — Tokyo Marathon 2026</h3></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Athlete</th><th>Country</th><th>Finish</th><th>Division</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Marcel Hug</strong></td><td>🇨🇭 SUI</td><td>1:21:08</td><td>Men</td></tr>
+<tr><td>2</td><td>Luo Xingchuan</td><td>🇨🇳 CHN</td><td>1:28:07</td><td>Men</td></tr>
+<tr><td>3</td><td>Sho Watanabe</td><td>🇯🇵 JPN</td><td>1:33:08</td><td>Men</td></tr>
+<tr><td>1</td><td><strong>Catherine Debrunner</strong></td><td>🇨🇭 SUI</td><td>1:37:14</td><td>Women</td></tr>
+<tr><td>2</td><td>Eden Rainbow Cooper</td><td>🇬🇧 GBR</td><td>1:41:12</td><td>Women</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="page" id="page-boston">
+<div class="kpi-grid">
+<div class="kpi-card"><div class="kpi-label">Race Date</div><div class="kpi-value">Apr 20</div><div class="kpi-sub">130th Boston Marathon · Patriots' Day</div></div>
+<div class="kpi-card"><div class="kpi-label">Sub-2:07 Men</div><div class="kpi-value">25+</div><div class="kpi-sub">Strongest field in race history</div></div>
+<div class="kpi-card"><div class="kpi-label">Defending Champs</div><div class="kpi-value">4</div><div class="kpi-sub">Korir, Lokedi, Hug, Scaroni all return</div></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Men's Elite Field</h3></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Athlete</th><th>Country</th><th>PB</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><strong>John Korir</strong></td><td>🇰🇪 KEN</td><td>2:03:39</td><td>Defending champion</td></tr>
+<tr><td><strong>Conner Mantz</strong></td><td>🇺🇸 USA</td><td>2:06:47</td><td>American record holder, 4th in 2025</td></tr>
+<tr><td>Benson Kipruto</td><td>🇰🇪 KEN</td><td>2:03:16</td><td>2021 Boston champion</td></tr>
+<tr><td>Cybrian Kotut</td><td>🇰🇪 KEN</td><td>2:04:24</td><td>—</td></tr>
+<tr><td>Abdi Nageeye</td><td>🇳🇱 NED</td><td>2:04:45</td><td>Olympic marathon medalist</td></tr>
+<tr><td>Lemi Berhanu</td><td>🇪🇹 ETH</td><td>2:04:33</td><td>2016 Boston champion</td></tr>
+<tr><td>Hailemaryam Kiros</td><td>🇪🇹 ETH</td><td>2:03:55</td><td>—</td></tr>
+<tr><td>Zouhair Talbi</td><td>🇺🇸 USA</td><td>2:05:45</td><td>2026 Houston winner</td></tr>
+<tr><td>Marcel Hug (WC)</td><td>🇨🇭 SUI</td><td>1:17:06</td><td>8x Boston winner, defending</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Women's Elite Field</h3></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Athlete</th><th>Country</th><th>PB</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><strong>Sharon Lokedi</strong></td><td>🇰🇪 KEN</td><td>2:19:21</td><td>Defending champion</td></tr>
+<tr><td><strong>Emily Sisson</strong></td><td>🇺🇸 USA</td><td>2:18:29</td><td>American record holder</td></tr>
+<tr><td>Susannah Scaroni (WC)</td><td>🇺🇸 USA</td><td>1:35:21</td><td>Defending wheelchair champion</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="page" id="page-splits">
+<div class="card">
+<div class="card-header"><h3 class="card-title">Tokyo 2026 — Split Analysis (Takele vs Kosgei)</h3></div>
+<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">Estimated 5km splits based on finish times and reported race dynamics.</p>
+<div class="chart-container"><canvas id="chartSplits"></canvas></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Split Distribution</h3></div>
+<div style="margin-bottom:var(--space-4)">
+<h4 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-2)">Takele — 2:03:36 (even/positive)</h4>
+<div class="split-bar">
+<div style="flex:14.5;background:var(--color-primary)">1H 61:45</div>
+<div style="flex:14.7;background:var(--color-primary-hover)">2H 61:51</div>
+</div>
+</div>
+<div>
+<h4 style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-2)">Kosgei — 2:14:28 CR (negative split)</h4>
+<div class="split-bar">
+<div style="flex:15.5;background:var(--color-orange)">1H ~68:00</div>
+<div style="flex:14.7;background:#c55700">2H ~66:28</div>
+</div>
+</div>
+</div>
+</div>
+<div class="page" id="page-elevation">
+<div class="card">
+<div class="card-header"><h3 class="card-title">Elevation-Adjusted Pacing</h3></div>
+<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-4)">Enter your flat marathon pace to see adjusted targets for each course.</p>
+<div class="form-row" style="margin-bottom:var(--space-4)">
+<div class="form-group"><label class="form-label">Your flat marathon pace (min/km)</label><input class="form-input" type="text" id="elevPace" value="5:00" placeholder="5:00"></div>
+</div>
+<button class="btn btn-primary" onclick="calcElevation()">Calculate adjusted paces</button>
+<div id="elevResults" style="margin-top:var(--space-6)"></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Course Elevation Profiles</h3></div>
+<div class="chart-container"><canvas id="chartElevation"></canvas></div>
+</div>
+</div>
+<div class="page" id="page-weather">
+<div class="card">
+<div class="card-header"><h3 class="card-title">Weather Sensitivity Model</h3></div>
+<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-6)">For every 5°C above optimal (8–12°C), expect ~1–3% slower times. Humidity compounds the effect.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Condition</th><th>Temp</th><th>Impact on Pace</th><th>Risk Level</th></tr></thead>
+<tbody>
+<tr><td>Ideal</td><td>8–12°C</td><td>Baseline</td><td><span style="color:var(--color-success)">● Low</span></td></tr>
+<tr><td>Cool</td><td>5–8°C</td><td>+0–1%</td><td><span style="color:var(--color-success)">● Low</span></td></tr>
+<tr><td>Warm</td><td>15–20°C</td><td>+2–4%</td><td><span style="color:var(--color-warning)">● Medium</span></td></tr>
+<tr><td>Hot</td><td>20–25°C</td><td>+5–8%</td><td><span style="color:var(--color-error)">● High</span></td></tr>
+<tr><td>Dangerous</td><td>25°C+</td><td>+10%+</td><td><span style="color:var(--color-error)">● Critical</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Historical Race Day Weather</h3></div>
+<div class="chart-container"><canvas id="chartWeather"></canvas></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">Your Weather Adjustment</h3></div>
+<div class="form-row">
+<div class="form-group"><label class="form-label">Target pace (min/km)</label><input class="form-input" type="text" id="wxPace" value="5:00"></div>
+<div class="form-group"><label class="form-label">Expected temp (°C)</label><input class="form-input" type="number" id="wxTemp" value="18"></div>
+<div class="form-group"><label class="form-label">Humidity (%)</label><input class="form-input" type="number" id="wxHumid" value="60"></div>
+</div>
+<button class="btn btn-primary" onclick="calcWeather()">Calculate</button>
+<div id="wxResult" style="margin-top:var(--space-4)"></div>
+</div>
+</div>
+<div class="page" id="page-predictor">
+<div class="card">
+<div class="card-header"><h3 class="card-title">Boston Marathon Time Predictor</h3></div>
+<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-6)">Estimates your Boston finish based on a recent flat marathon, adjusted for Newton Hills and April weather.</p>
+<div class="form-row">
+<div class="form-group"><label class="form-label">Recent marathon time</label><input class="form-input" type="text" id="bqTime" value="3:15:00" placeholder="H:MM:SS"></div>
+<div class="form-group"><label class="form-label">Course it was run on</label><select class="form-select" id="bqCourse"><option value="flat">Flat (Chicago, Berlin, Tokyo)</option><option value="rolling">Rolling (NYC, London)</option><option value="hilly">Hilly (other)</option></select></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label class="form-label">Expected Boston temp (°C)</label><input class="form-input" type="number" id="bqTemp" value="16"></div>
+<div class="form-group"><label class="form-label">Your hill strength</label><select class="form-select" id="bqHills"><option value="weak">Weak</option><option value="average" selected>Average</option><option value="strong">Strong</option></select></div>
+</div>
+<button class="btn btn-primary" onclick="predictBoston()">Predict my Boston time</button>
+<div id="bostonResult"></div>
+</div>
+</div>
+<div class="page" id="page-calculator">
+<div class="card">
+<div class="card-header"><h3 class="card-title">Training Equivalence Calculator</h3></div>
+<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-6)">Enter a recent run to get equivalent targets across road, trail, and ultra distances using Riegel's formula.</p>
+<div class="form-row">
+<div class="form-group"><label class="form-label">Distance (km)</label><input class="form-input" type="number" id="calcDist" value="21.1" step="0.1"></div>
+<div class="form-group"><label class="form-label">Time (H:MM:SS)</label><input class="form-input" type="text" id="calcTime" value="1:45:00"></div>
+<div class="form-group"><label class="form-label">Surface</label><select class="form-select" id="calcSurface"><option value="road">Road</option><option value="trail">Trail</option><option value="track">Track</option></select></div>
+</div>
+<button class="btn btn-primary" onclick="calcEquivalent()">Calculate equivalents</button>
+<div id="calcResults" style="margin-top:var(--space-6)"></div>
+</div>
+<div class="card">
+<div class="card-header"><h3 class="card-title">My Recent Runs</h3></div>
+<div class="form-row" style="margin-bottom:var(--space-4)">
+<div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="runDate"></div>
+<div class="form-group"><label class="form-label">Distance (km)</label><input class="form-input" type="number" id="runDist" step="0.1"></div>
+<div class="form-group"><label class="form-label">Time</label><input class="form-input" type="text" id="runTime" placeholder="H:MM:SS"></div>
+<div class="form-group"><label class="form-label">Type</label><select class="form-select" id="runType"><option value="road">Road</option><option value="trail">Trail</option><option value="track">Track</option></select></div>
+</div>
+<button class="btn btn-primary" onclick="addRun()">Add run</button>
+<div id="runsTable" style="margin-top:var(--space-4)"></div>
+</div>
+</div>
+<div class="page" id="page-calendar">
+<div class="tabs">
+<button class="tab active" data-tab="cal-majors">Marathon Majors</button>
+<button class="tab" data-tab="cal-trail">Trail & Ultra</button>
+<button class="tab" data-tab="cal-halfs">Half Marathons</button>
+</div>
+<div class="card" id="tab-cal-majors"><div id="calMajors"></div></div>
+<div class="card" id="tab-cal-trail" style="display:none"><div id="calTrail"></div></div>
+<div class="card" id="tab-cal-halfs" style="display:none"><div id="calHalfs"></div></div>
+</div>
+</main>
+</div>
+<script>
+(function(){const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';r.setAttribute('data-theme',d);function upd(){t.innerHTML=d==='dark'?'<i data-lucide="sun"></i>':'<i data-lucide="moon"></i>';lucide.createIcons()}upd();t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);upd();renderCharts()})})();
+const navItems=document.querySelectorAll('.nav-item');const pages=document.querySelectorAll('.page');const pageTitle=document.getElementById('pageTitle');const titles={dashboard:'Overview',tokyo:'Tokyo 2026 Results',boston:'Boston 2026 Field',splits:'Split Analysis',elevation:'Elevation Pacing',weather:'Weather Impact',predictor:'Boston Predictor',calculator:'Training Calculator',calendar:'Race Calendar'};
+navItems.forEach(n=>n.addEventListener('click',()=>{const p=n.dataset.page;navItems.forEach(x=>x.classList.remove('active'));n.classList.add('active');pages.forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');pageTitle.textContent=titles[p];document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('open');if(p==='splits')renderSplits();if(p==='elevation')renderElevation();if(p==='weather')renderWeatherChart();if(p==='calendar')renderCalendars();}));
+document.getElementById('menuBtn').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('open')});document.getElementById('overlay').addEventListener('click',()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('open')});
+document.querySelectorAll('.tabs').forEach(tabBar=>{tabBar.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',()=>{tabBar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');const prefix=tab.dataset.tab.split('-').slice(0,-1).join('-');tabBar.parentElement.querySelectorAll('[id^="tab-'+prefix+'"]').forEach(p=>p.style.display='none');document.getElementById('tab-'+tab.dataset.tab).style.display='block';})})});
+function cc(){const s=getComputedStyle(document.documentElement);return{primary:s.getPropertyValue('--color-primary').trim(),orange:s.getPropertyValue('--color-orange').trim(),blue:s.getPropertyValue('--color-blue').trim(),purple:s.getPropertyValue('--color-purple').trim(),success:s.getPropertyValue('--color-success').trim(),text:s.getPropertyValue('--color-text').trim(),muted:s.getPropertyValue('--color-text-muted').trim(),border:s.getPropertyValue('--color-border').trim()}}
+let chartRT;function renderCharts(){const c=cc();if(chartRT)chartRT.destroy();chartRT=new Chart(document.getElementById('chartRaceTypes'),{type:'bar',data:{labels:['5K','10K','Half','Marathon','50K Ultra','100K Ultra','100mi Ultra'],datasets:[{label:'% slower on trail vs road',data:[0,0,0,0,8,15,25],backgroundColor:[c.primary,c.primary,c.blue,c.blue,c.purple,c.purple,c.purple],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'% slower (trail vs road)',color:c.muted,font:{size:11}},grid:{color:c.border+'40'},ticks:{color:c.muted}},x:{grid:{display:false},ticks:{color:c.muted}}}}})}
+renderCharts();
+let chartSplits;function renderSplits(){const c=cc();if(chartSplits)chartSplits.destroy();chartSplits=new Chart(document.getElementById('chartSplits'),{type:'line',data:{labels:['5K','10K','15K','20K','25K','30K','35K','40K','Fin'],datasets:[{label:'Takele (min/km)',data:[2.93,2.92,2.93,2.93,2.92,2.91,2.93,2.94,2.96],borderColor:c.primary,backgroundColor:c.primary+'20',tension:0.3,fill:true,pointRadius:4},{label:'Kosgei (min/km)',data:[3.22,3.22,3.21,3.20,3.19,3.18,3.15,3.14,3.16],borderColor:c.orange,backgroundColor:c.orange+'20',tension:0.3,fill:true,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.text}}},scales:{y:{title:{display:true,text:'Pace (min/km)',color:c.muted},grid:{color:c.border+'40'},ticks:{color:c.muted}},x:{grid:{display:false},ticks:{color:c.muted}}}}})}
+let chartElev;function renderElevation(){const c=cc();if(chartElev)chartElev.destroy();chartElev=new Chart(document.getElementById('chartElevation'),{type:'line',data:{labels:['0','5','10','15','20','25','30','35','40','42.2'].map(x=>x+'km'),datasets:[{label:'Boston',data:[149,130,110,90,60,50,80,90,40,10],borderColor:c.primary,backgroundColor:c.primary+'15',tension:0.4,fill:true},{label:'Tokyo',data:[35,30,28,25,22,20,18,15,12,10],borderColor:c.orange,backgroundColor:c.orange+'15',tension:0.4,fill:true},{label:'NYC',data:[90,50,30,25,80,95,70,50,40,10],borderColor:c.purple,backgroundColor:c.purple+'15',tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.text}}},scales:{y:{title:{display:true,text:'Elevation (m)',color:c.muted},grid:{color:c.border+'40'},ticks:{color:c.muted}},x:{grid:{display:false},ticks:{color:c.muted}}}}})}
+let chartWx;function renderWeatherChart(){const c=cc();if(chartWx)chartWx.destroy();chartWx=new Chart(document.getElementById('chartWeather'),{type:'scatter',data:{datasets:[{label:'Tokyo',data:[{x:10,y:0},{x:12,y:0.5},{x:8,y:-0.3},{x:15,y:1.5},{x:11,y:0.2}],backgroundColor:c.primary,pointRadius:6},{label:'Boston',data:[{x:14,y:1.2},{x:18,y:3},{x:10,y:0.1},{x:22,y:5.5},{x:16,y:2}],backgroundColor:c.orange,pointRadius:6},{label:'Berlin',data:[{x:12,y:0.3},{x:15,y:1},{x:18,y:2.5},{x:9,y:-0.2},{x:14,y:0.8}],backgroundColor:c.blue,pointRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.text}}},scales:{x:{title:{display:true,text:'Temperature (°C)',color:c.muted},grid:{color:c.border+'40'},ticks:{color:c.muted}},y:{title:{display:true,text:'Pace impact (%)',color:c.muted},grid:{color:c.border+'40'},ticks:{color:c.muted}}}}})}
+function parsePace(s){const p=s.split(':');return parseFloat(p[0])+parseFloat(p[1]||0)/60}function fmtPace(m){const min=Math.floor(m);const sec=Math.round((m-min)*60);return min+':'+(sec<10?'0':'')+sec}function parseTime(s){const p=s.split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*60+p[1];return p[0]}function fmtTime(s){const h=Math.floor(s/3600);const m=Math.floor((s%3600)/60);const sc=Math.round(s%60);return h+':'+(m<10?'0':'')+m+':'+(sc<10?'0':'')+sc}
+function calcElevation(){const pace=parsePace(document.getElementById('elevPace').value);const courses=[{name:'Tokyo',gain:36,desc:'Nearly flat',adj:0},{name:'Boston',gain:240,desc:'Net downhill, Newton Hills',adj:0.02},{name:'Berlin',gain:28,desc:'Flat, fast',adj:-0.01},{name:'London',gain:30,desc:'Mostly flat',adj:0},{name:'Chicago',gain:18,desc:'Pancake flat',adj:-0.01},{name:'NYC',gain:220,desc:'5 bridges, hilly',adj:0.03},{name:'UTMB (171km)',gain:10000,desc:'Alpine ultra',adj:0.80},{name:'Western States (161km)',gain:5500,desc:'Mountain trail',adj:0.50}];let html='<div class="table-wrap"><table><thead><tr><th>Course</th><th>Elev Gain</th><th>Profile</th><th>Adjusted Pace</th><th>Est. Finish</th></tr></thead><tbody>';courses.forEach(c=>{const adj=pace*(1+c.adj);const dist=c.name.includes('171')?171:c.name.includes('161')?161:42.195;const fin=adj*dist*60;html+=`<tr><td><strong>${c.name}</strong></td><td>${c.gain}m</td><td>${c.desc}</td><td>${fmtPace(adj)}/km</td><td>${fmtTime(fin)}</td></tr>`;});html+='</tbody></table></div>';document.getElementById('elevResults').innerHTML=html;}
+function calcWeather(){const pace=parsePace(document.getElementById('wxPace').value);const temp=parseFloat(document.getElementById('wxTemp').value);const humid=parseFloat(document.getElementById('wxHumid').value);let impact=0;if(temp>12)impact+=(temp-12)*0.4;if(temp<5)impact+=(5-temp)*0.15;if(humid>60)impact+=(humid-60)*0.05;const adjPace=pace*(1+impact/100);const fin=adjPace*42.195*60;document.getElementById('wxResult').innerHTML=`<div class="predict-result"><div class="kpi-label">Weather-adjusted pace</div><div class="big">${fmtPace(adjPace)}/km</div><p style="font-size:var(--text-sm);color:var(--color-text-muted)">Impact: +${impact.toFixed(1)}% · Est. marathon: ${fmtTime(fin)}</p></div>`;}
+function predictBoston(){const sec=parseTime(document.getElementById('bqTime').value);const course=document.getElementById('bqCourse').value;const temp=parseFloat(document.getElementById('bqTemp').value);const hills=document.getElementById('bqHills').value;let adj=0;if(course==='flat')adj+=0.01;if(course==='hilly')adj-=0.01;if(temp>12)adj+=(temp-12)*0.004;if(hills==='weak')adj+=0.015;if(hills==='strong')adj-=0.01;adj-=0.005;const predicted=sec*(1+adj);const diff=predicted-sec;document.getElementById('bostonResult').innerHTML=`<div class="predict-result"><div class="kpi-label">Predicted Boston Finish</div><div class="big">${fmtTime(predicted)}</div><p style="font-size:var(--text-sm);color:var(--color-text-muted)">${diff>0?'+':'-'}${fmtTime(Math.abs(diff))} vs input · Adj: ${(adj*100).toFixed(1)}% · Newton Hills at 30K</p></div>`;}
+function calcEquivalent(){const dist=parseFloat(document.getElementById('calcDist').value);const sec=parseTime(document.getElementById('calcTime').value);const surface=document.getElementById('calcSurface').value;let roadSec=sec;if(surface==='trail')roadSec=sec*0.88;if(surface==='track')roadSec=sec*1.02;function riegel(d2){return roadSec*Math.pow(d2/dist,1.06)}function trailAdj(s){return s*1.15}function ultraAdj(s,d){return s*(1+Math.max(0,(d-42.195)*0.003))}const targets=[{name:'5K Road',dist:5,type:'road'},{name:'10K Road',dist:10,type:'road'},{name:'Half Marathon',dist:21.0975,type:'road'},{name:'Marathon',dist:42.195,type:'road'},{name:'25K Trail',dist:25,type:'trail'},{name:'50K Trail',dist:50,type:'trail'},{name:'50K Ultra',dist:50,type:'ultra'},{name:'100K Ultra',dist:100,type:'ultra'},{name:'100mi Ultra',dist:160.934,type:'ultra'}];let html='<div class="table-wrap"><table><thead><tr><th>Target Race</th><th>Distance</th><th>Type</th><th>Predicted Time</th><th>Pace</th></tr></thead><tbody>';targets.forEach(t=>{let pred=riegel(t.dist);if(t.type==='trail')pred=trailAdj(pred);if(t.type==='ultra')pred=ultraAdj(trailAdj(pred),t.dist);const pace=pred/(t.dist*60);const badge=t.type==='road'?'badge-road':t.type==='trail'?'badge-trail':'badge-ultra';html+=`<tr><td><strong>${t.name}</strong></td><td>${t.dist}km</td><td><span class="badge ${badge}">${t.type}</span></td><td>${fmtTime(pred)}</td><td>${fmtPace(pace)}/km</td></tr>`;});html+='</tbody></table></div>';document.getElementById('calcResults').innerHTML=html;}
+let runs=[];function addRun(){const d=document.getElementById('runDate').value;const dist=document.getElementById('runDist').value;const time=document.getElementById('runTime').value;const type=document.getElementById('runType').value;if(!d||!dist||!time)return;runs.push({date:d,dist:parseFloat(dist),time,type});renderRuns();}function renderRuns(){if(!runs.length){document.getElementById('runsTable').innerHTML='<p style="color:var(--color-text-muted);font-size:var(--text-sm)">No runs logged yet.</p>';return}let html='<div class="table-wrap"><table><thead><tr><th>Date</th><th>Distance</th><th>Time</th><th>Pace</th><th>Type</th></tr></thead><tbody>';runs.forEach(r=>{const sec=parseTime(r.time);const pace=sec/(r.dist*60);const badge=r.type==='road'?'badge-road':r.type==='trail'?'badge-trail':'badge-ultra';html+=`<tr><td>${r.date}</td><td>${r.dist}km</td><td>${r.time}</td><td>${fmtPace(pace)}/km</td><td><span class="badge ${badge}">${r.type}</span></td></tr>`;});html+='</tbody></table></div>';document.getElementById('runsTable').innerHTML=html;}renderRuns();
+function renderCalendars(){const majors=[{month:'MAR',day:'01',name:'Tokyo Marathon',dist:'42.195km',loc:'Tokyo, Japan',badge:'badge-road',status:'✅ Complete'},{month:'APR',day:'20',name:'Boston Marathon',dist:'42.195km',loc:'Boston, USA',badge:'badge-road',status:'Field Set'},{month:'APR',day:'26',name:'London Marathon',dist:'42.195km',loc:'London, UK',badge:'badge-road',status:'Upcoming'},{month:'SEP',day:'27',name:'Berlin Marathon',dist:'42.195km',loc:'Berlin, Germany',badge:'badge-road',status:'Upcoming'},{month:'OCT',day:'11',name:'Chicago Marathon',dist:'42.195km',loc:'Chicago, USA',badge:'badge-road',status:'Upcoming'},{month:'NOV',day:'01',name:'NYC Marathon',dist:'42.195km',loc:'New York, USA',badge:'badge-road',status:'Upcoming'}];const trail=[{month:'APR',day:'18',name:'High Atlas Ultra Trail',dist:'120km',loc:'Imlil, Morocco',badge:'badge-ultra',status:'Upcoming'},{month:'JUN',day:'28',name:'Western States 100',dist:'161km',loc:'California, USA',badge:'badge-ultra',status:'Upcoming'},{month:'AUG',day:'28',name:'UTMB Mont-Blanc',dist:'171km',loc:'Chamonix, France',badge:'badge-ultra',status:'Upcoming'},{month:'SEP',day:'—',name:'Tor des Géants',dist:'330km',loc:'Aosta Valley, Italy',badge:'badge-ultra',status:'Upcoming'},{month:'OCT',day:'—',name:'Diagonale des Fous',dist:'165km',loc:'Réunion Island',badge:'badge-ultra',status:'Upcoming'}];const halfs=[{month:'APR',day:'06',name:'Prague Half Marathon',dist:'21.1km',loc:'Prague, Czechia',badge:'badge-half',status:'Upcoming'},{month:'SEP',day:'14',name:'Great North Run',dist:'21.1km',loc:'Newcastle, UK',badge:'badge-half',status:'Upcoming'},{month:'OCT',day:'—',name:'Valencia Half Marathon',dist:'21.1km',loc:'Valencia, Spain',badge:'badge-half',status:'Upcoming'},{month:'NOV',day:'—',name:'Hong Kong Half Marathon',dist:'21.1km',loc:'Hong Kong 🇭🇰',badge:'badge-half',status:'Upcoming'}];function renderList(items,target){let html='';items.forEach(i=>{html+=`<div class="cal-item"><div class="cal-date"><div class="month">${i.month}</div><div class="day">${i.day}</div></div><div><div class="cal-name">${i.name}</div><div class="cal-meta">${i.loc} · ${i.dist}</div></div><div><span class="badge ${i.badge}">${i.status}</span></div></div>`;});document.getElementById(target).innerHTML=html;}renderList(majors,'calMajors');renderList(trail,'calTrail');renderList(halfs,'calHalfs');}renderCalendars();
+lucide.createIcons();
+</script>
+</body>
+</html>
